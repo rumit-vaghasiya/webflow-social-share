@@ -34,12 +34,26 @@
     return m ? m.getAttribute("content") : "";
   }
 
-  // Per-button attributes win, then the data-share-group wrapper, then the page itself.
+  // Reads a value from a child element inside the group, Finsweet style.
+  // Put data-share-from="url" (or title/text/image) on a Text Block, Link, or Image.
+  // Text elements use their text content, images and links can use src/href.
+  function fromElement(scope, key) {
+    if (!scope || !scope.querySelector) return "";
+    var el = scope.querySelector('[data-share-from="' + key + '"]');
+    if (!el) return "";
+    if (key === "image") return el.getAttribute("src") || (el.textContent || "").trim();
+    if (key === "url")    return (el.textContent || "").trim() || el.getAttribute("href") || "";
+    return (el.textContent || "").trim();
+  }
+
+  // Priority: per-button attribute, then group attribute, then a data-share-from
+  // element inside the group, then the page's own URL / title / Open Graph tags.
   function resolve(btn) {
     var group = btn.closest("[data-share-group]") || document;
     function pick(attr) {
       return btn.getAttribute("data-share-" + attr) ||
-        (group.getAttribute ? group.getAttribute("data-share-" + attr) : "") || "";
+        (group.getAttribute ? group.getAttribute("data-share-" + attr) : "") ||
+        fromElement(group, attr) || "";
     }
     return {
       url:   pick("url")   || location.href,
